@@ -9,4 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+      # Keeps the required check pending long enough that the auto-merge
+      # workflow has to queue the merge rather than merge immediately.
+      - run: sleep 90
       - run: echo "event=${{ github.event_name }} sha=${{ github.sha }} actor=${{ github.actor }}"
