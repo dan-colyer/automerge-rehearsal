@@ -6,7 +6,7 @@ jobs:
   noop:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/create-github-app-token@v2
+      - uses: actions/create-github-app-token@v3
         with:
           client-id: unused
           private-key: unused
