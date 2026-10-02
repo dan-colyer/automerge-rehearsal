@@ -1,0 +1,12 @@
+# Never runs. It exists only so that Dependabot raises a bump for an action
+# that the auto-merge workflow must refuse.
+name: excluded-action-probe
+on: workflow_dispatch
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@v2
+        with:
+          client-id: unused
+          private-key: unused
