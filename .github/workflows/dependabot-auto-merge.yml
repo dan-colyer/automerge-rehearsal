@@ -1,8 +1,41 @@
 name: Dependabot auto-merge
+
+# Auto-approves and enables auto-merge for low-risk Dependabot PRs:
+#   - github-actions version bumps (any semver), except the two actions this
+#     workflow itself runs with the merge App's key (see below)
+#   - development-dependency patch/minor bumps
+# Production dependencies and all major pip bumps are left for a human to review.
+#
+# This only *enables* auto-merge. The merge is still gated by the `Protect main`
+# ruleset: three required checks (Lint & Unit Tests, Coverage Gate, Local Spark
+# Contract Tests) plus one approving review, with no bypass actors. The approval
+# below is what satisfies the review requirement. Runtime-coupled packages
+# (pandas, scipy, pyarrow, numpy, pandas-stubs) are excluded at source via
+# .github/dependabot.yml `ignore`.
+#
+# Why `pull_request_target`: a Dependabot-triggered `pull_request` run reads only
+# the Dependabot secret store, so it cannot see the merge App's secrets. A
+# `pull_request_target` run uses main's copy of this file and reads Actions
+# secrets.
+#
+# Why no checkout: `pull_request_target` runs with secrets and a write token, so
+# executing pull-request code here would hand both to that code. This workflow
+# must never check out or run anything from the PR head.
+#
+# Why a dedicated App for the merge: GitHub starts no workflow from a push made
+# with GITHUB_TOKEN, and an auto-merge is performed as whoever enabled it. Enabling
+# it with the App token makes the merge push trigger CI, and so deploy-staging.
+# The approval stays on GITHUB_TOKEN (github-actions[bot]).
+#
+# actions/create-github-app-token and dependabot/fetch-metadata are refused here
+# (and split out of the actions group in dependabot.yml): a compromised release of
+# either would run with the App key, so their bumps wait for a human.
+
 on: pull_request_target
+
 permissions:
-  contents: write
   pull-requests: write
+
 jobs:
   dependabot-auto-merge:
     runs-on: ubuntu-latest
@@ -14,7 +47,7 @@ jobs:
         id: metadata
         uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
 
-      - name: Mint merge App token
+      - name: Mint merge App token for low-risk updates
         id: apptoken
         if: >-
           (steps.metadata.outputs.package-ecosystem == 'github_actions' ||
@@ -29,6 +62,7 @@ jobs:
           repositories: automerge-rehearsal
           permission-contents: write
           permission-pull-requests: write
+          permission-workflows: write
 
       - name: Approve
         if: steps.apptoken.outcome == 'success'
@@ -37,7 +71,7 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Enable auto-merge as the App
+      - name: Enable auto-merge as the merge App
         if: steps.apptoken.outcome == 'success'
         run: gh pr merge --auto --squash --match-head-commit "$HEAD_SHA" "$PR_URL"
         env:

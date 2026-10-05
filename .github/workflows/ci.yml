@@ -12,6 +12,10 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
+      - uses: actions/cache/restore@v3
+        with:
+          path: /tmp/none
+          key: unused
       # Keeps the required check pending long enough that the auto-merge
       # workflow has to queue the merge rather than merge immediately.
       - run: sleep 90

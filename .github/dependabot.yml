@@ -1,4 +1,4 @@
-# Round 2: queued auto-merge path.
+# Round 3: shipped workflow; secrets on push and on close.
 version: 2
 updates:
   - package-ecosystem: github-actions
